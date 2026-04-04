@@ -1,50 +1,47 @@
 'use strict';
 
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const AI_TARGETS = {
-  claude: {
-    globalDir: path.join(os.homedir(), '.claude', 'skills'),
-    localDir: path.join('.claude', 'skills'),
-    skillsSource: path.join(__dirname, '..', 'skills', 'claude'),
-  },
-  cursor: {
-    globalDir: path.join(os.homedir(), '.cursor', 'skills'),
-    localDir: path.join('.cursor', 'skills'),
-    skillsSource: path.join(__dirname, '..', 'skills', 'cursor'),
-  },
+// All platforms supported by uipro-cli (ui-ux-pro-max-skill)
+const SUPPORTED_AI = [
+  'claude', 'cursor', 'windsurf', 'antigravity', 'copilot', 'kiro',
+  'roocode', 'codex', 'qoder', 'gemini', 'trae', 'opencode', 'continue',
+  'codebuddy', 'droid', 'kilocode', 'warp', 'augment', 'all',
+];
+
+// Root dirs written by uipro-cli per platform (for --global path reporting)
+const PLATFORM_ROOTS = {
+  claude: ['.claude'],
+  cursor: ['.cursor', '.shared'],
+  windsurf: ['.windsurf', '.shared'],
+  antigravity: ['.agents', '.shared'],
+  copilot: ['.github', '.shared'],
+  kiro: ['.kiro', '.shared'],
+  roocode: ['.roo', '.shared'],
+  codex: ['.codex'],
+  qoder: ['.qoder', '.shared'],
+  gemini: ['.gemini', '.shared'],
+  trae: ['.trae', '.shared'],
+  opencode: ['.opencode', '.shared'],
+  continue: ['.continue'],
+  codebuddy: ['.codebuddy'],
+  droid: ['.factory'],
+  kilocode: ['.kilocode', '.shared'],
+  warp: ['.warp', '.shared'],
+  augment: ['.augment', '.shared'],
+  all: [],
 };
 
-const SUPPORTED_AI = Object.keys(AI_TARGETS);
-
 function resolveDestDir(ai, isGlobal) {
-  const target = AI_TARGETS[ai];
-  return isGlobal ? target.globalDir : path.resolve(process.cwd(), target.localDir);
+  const roots = PLATFORM_ROOTS[ai] || [];
+  const base = isGlobal ? os.homedir() : process.cwd();
+  return roots.map(r => path.join(base, r));
 }
 
-function copySkills(sourceDir, destDir) {
-  fs.mkdirSync(destDir, { recursive: true });
-
-  const files = fs.readdirSync(sourceDir);
-  const copied = [];
-
-  for (const file of files) {
-    const src = path.join(sourceDir, file);
-    const dest = path.join(destDir, file);
-    const stat = fs.statSync(src);
-
-    if (stat.isFile()) {
-      fs.copyFileSync(src, dest);
-      copied.push(dest);
-    }
-  }
-
-  return copied;
-}
-
-function runInit({ ai, global: isGlobal }) {
+function runInit({ ai, global: isGlobal, force, offline }) {
   if (!ai) {
     throw new Error(
       `Missing required flag: --ai <name>\nSupported values: ${SUPPORTED_AI.join(', ')}`
@@ -58,15 +55,18 @@ function runInit({ ai, global: isGlobal }) {
     );
   }
 
-  const target = AI_TARGETS[normalizedAi];
-  const destDir = resolveDestDir(normalizedAi, isGlobal);
+  // Build uipro-cli args
+  const args = ['npx', '--yes', 'uipro-cli@latest', 'init', '--ai', normalizedAi];
+  if (force) args.push('--force');
+  if (offline) args.push('--offline');
 
-  const copied = copySkills(target.skillsSource, destDir);
+  // For --global: run from home dir so uipro-cli writes to ~/.claude etc.
+  const cwd = isGlobal ? os.homedir() : process.cwd();
 
-  console.log(`uipro skills installed for ${normalizedAi}`);
-  console.log(`  Destination: ${destDir}`);
-  for (const file of copied) {
-    console.log(`  + ${path.basename(file)}`);
+  try {
+    execSync(args.join(' '), { cwd, stdio: 'inherit' });
+  } catch (err) {
+    throw new Error(`uipro-cli failed: ${err.message}`);
   }
 }
 

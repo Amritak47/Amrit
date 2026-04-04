@@ -7,22 +7,28 @@ const USAGE = `
 Usage: uipro <command> [options]
 
 Commands:
-  init    Install AI editor skills
+  init    Install UI/UX Pro Max skill for an AI editor
 
-Options:
-  --ai <name>   AI editor target: claude, cursor  (required for init)
+Options for init:
+  --ai <name>   AI editor target (required)
+                claude, cursor, windsurf, copilot, kiro, roocode, codex,
+                qoder, gemini, trae, opencode, continue, codebuddy, droid,
+                kilocode, warp, augment, all
   --global      Install to the user home directory instead of current project
+  --force       Overwrite existing files
+  --offline     Skip GitHub download, use bundled assets only
   --help, -h    Show this help message
 
 Examples:
   uipro init --ai claude --global   # Install to ~/.claude/skills/
   uipro init --ai cursor --global   # Install to ~/.cursor/skills/
-  uipro init --ai claude            # Install to ./.claude/skills/
+  uipro init --ai all --global      # Install for all supported editors
+  uipro init --ai claude            # Install locally to ./.claude/skills/
 `.trim();
 
 function parseArgs(argv) {
   const args = argv.slice(2);
-  const result = { command: null, ai: null, global: false };
+  const result = { command: null, ai: null, global: false, force: false, offline: false };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -30,7 +36,11 @@ function parseArgs(argv) {
       result.help = true;
     } else if (arg === '--global') {
       result.global = true;
-    } else if (arg === '--ai') {
+    } else if (arg === '--force' || arg === '-f') {
+      result.force = true;
+    } else if (arg === '--offline' || arg === '-o') {
+      result.offline = true;
+    } else if (arg === '--ai' || arg === '-a') {
       result.ai = args[++i];
     } else if (arg.startsWith('--ai=')) {
       result.ai = arg.slice('--ai='.length);
@@ -52,7 +62,7 @@ function main() {
 
   if (args.command === 'init') {
     try {
-      runInit({ ai: args.ai, global: args.global });
+      runInit({ ai: args.ai, global: args.global, force: args.force, offline: args.offline });
     } catch (err) {
       console.error(`Error: ${err.message}`);
       process.exit(1);
