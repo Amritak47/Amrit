@@ -1,0 +1,17 @@
+{
+  "name": "uipro",
+  "version": "1.0.0",
+  "description": "UI component toolkit with AI editor skill integration",
+  "bin": {
+    "uipro": "./bin/uipro.js"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test src/__tests__/init.test.js"
+  },
+  "keywords": ["ui", "components", "ai", "cli", "skills"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
