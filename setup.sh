@@ -10,12 +10,12 @@
 #   2. superpowers          — Agentic dev methodology (TDD, debugging, code review)
 #   3. everything-claude-code — Full agent harness (140 skills, 38 agents)
 #   4. claude-mem           — Persistent cross-session memory
-#   5. n8n-mcp              — n8n workflow MCP server (1,396 nodes, 2,709 templates)
-#   6. browser-use          — Browser automation skill + CLI
+#   5. browser-use          — Browser automation skill + CLI
+#   6. n8n-mcp              — n8n workflow MCP server (1,396 nodes, 2,709 templates)
 #   7. sequential-thinking  — Structured reasoning MCP (no API key needed)
 #   8. context7             — Live library documentation MCP (no API key needed)
-#   9. brave-search         — Web search MCP (requires free BRAVE_API_KEY)
-#  10. postgres             — Database MCP (requires connection string)
+#   9. duckduckgo-search    — Web search MCP (no API key needed, completely free)
+#  10. postgres             — Database MCP (requires your connection string)
 #
 # Usage:
 #   chmod +x setup.sh && ./setup.sh
@@ -42,10 +42,10 @@ header()  { echo -e "\n${BOLD}${CYAN}━━━ $* ━━━${RESET}"; }
 # ── Prereq checks ─────────────────────────────────────────────────────────────
 header "Checking prerequisites"
 
-command -v node  >/dev/null 2>&1 || error "Node.js not found. Install from https://nodejs.org"
-command -v npm   >/dev/null 2>&1 || error "npm not found. Install Node.js from https://nodejs.org"
-command -v npx   >/dev/null 2>&1 || error "npx not found. Install Node.js from https://nodejs.org"
-command -v git   >/dev/null 2>&1 || error "git not found. Install git first."
+command -v node    >/dev/null 2>&1 || error "Node.js not found. Install from https://nodejs.org"
+command -v npm     >/dev/null 2>&1 || error "npm not found. Install Node.js from https://nodejs.org"
+command -v npx     >/dev/null 2>&1 || error "npx not found. Install Node.js from https://nodejs.org"
+command -v git     >/dev/null 2>&1 || error "git not found. Install git first."
 command -v python3 >/dev/null 2>&1 || error "Python 3 not found. Install from https://python.org"
 
 NODE_VERSION=$(node --version | sed 's/v//' | cut -d. -f1)
@@ -60,7 +60,7 @@ fi
 
 success "Prerequisites OK (Node $(node --version), Python $(python3 --version))"
 
-# ── uv (Python package manager) ─────────────────────────────────────────��─────
+# ── uv (Python package manager) ───────────────────────────────────────────────
 if ! command -v uv >/dev/null 2>&1; then
   header "Installing uv (Python package manager)"
   curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -88,7 +88,7 @@ cp -r "$TMP_SP/skills/"* "$CLAUDE_DIR/skills/"
 rm -rf "$TMP_SP"
 success "Superpowers installed (14 skills) → ~/.claude/skills/"
 
-# ── 3. Everything Claude Code ───────────────────────────────────────────────��─
+# ── 3. Everything Claude Code ─────────────────────────────────────────────────
 header "3/6  Everything Claude Code (affaan-m/everything-claude-code)"
 TMP_ECC=$(mktemp -d)
 git clone --depth=1 https://github.com/affaan-m/everything-claude-code.git "$TMP_ECC"
@@ -104,32 +104,58 @@ header "4/6  claude-mem (persistent memory)"
 npx --yes claude-mem install
 success "claude-mem installed"
 
-# ── 5. n8n-mcp (MCP server) ───────────────────────────────────────────────────
-header "5/6  n8n-mcp (MCP server)"
+# ── 5. browser-use ────────────────────────────────────────────────────────────
+header "5/6  browser-use (browser automation)"
+mkdir -p "$CLAUDE_DIR/skills/browser-use"
+curl -fsSL -o "$CLAUDE_DIR/skills/browser-use/SKILL.md" \
+  https://raw.githubusercontent.com/browser-use/browser-use/main/skills/browser-use/SKILL.md
+success "browser-use skill installed → ~/.claude/skills/browser-use/"
+export PATH="$HOME/.local/bin:$PATH"
+if command -v uv >/dev/null 2>&1; then
+  uv tool install browser-use 2>&1 | tail -3 || warn "browser-use CLI install had warnings (continuing)"
+  success "browser-use CLI installed (run: uvx browser-use install — to add Chromium)"
+else
+  warn "uv not found — run: uv tool install browser-use after installing uv"
+fi
 
-# Disable telemetry silently
+# ── 6. MCP Servers ────────────────────────────────────────────────────────────
+header "6/6  MCP Servers (n8n, search, reasoning, docs, database)"
+
 npx --yes n8n-mcp telemetry disable >/dev/null 2>&1 || true
 
-# Write MCP config
 MCP_FILE="$CLAUDE_DIR/.mcp.json"
+
+# Write full MCP config (merge if file already exists)
 if [ -f "$MCP_FILE" ]; then
-  # Merge: add n8n-mcp if not already present
-  if ! grep -q '"n8n-mcp"' "$MCP_FILE"; then
-    # Use node to merge JSON safely
-    node -e "
-      const fs = require('fs');
-      const cfg = JSON.parse(fs.readFileSync('$MCP_FILE', 'utf8'));
-      cfg.mcpServers = cfg.mcpServers || {};
-      cfg.mcpServers['n8n-mcp'] = {
-        command: 'npx',
-        args: ['n8n-mcp'],
+  node -e "
+    const fs = require('fs');
+    const cfg = JSON.parse(fs.readFileSync('$MCP_FILE', 'utf8'));
+    cfg.mcpServers = cfg.mcpServers || {};
+    const servers = {
+      'n8n-mcp': {
+        command: 'npx', args: ['n8n-mcp'],
         env: { MCP_MODE: 'stdio', LOG_LEVEL: 'error', DISABLE_CONSOLE_OUTPUT: 'true' }
-      };
-      fs.writeFileSync('$MCP_FILE', JSON.stringify(cfg, null, 2));
-    "
-  fi
+      },
+      'sequential-thinking': {
+        command: 'npx', args: ['-y', '@modelcontextprotocol/server-sequential-thinking']
+      },
+      'duckduckgo-search': {
+        command: 'npx', args: ['-y', 'duck-duck-mcp']
+      },
+      'context7': {
+        command: 'npx', args: ['-y', '@upstash/context7-mcp']
+      },
+      'postgres': {
+        command: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-postgres', 'postgresql://user:password@localhost:5432/mydb']
+      }
+    };
+    for (const [k, v] of Object.entries(servers)) {
+      if (!cfg.mcpServers[k]) cfg.mcpServers[k] = v;
+    }
+    fs.writeFileSync('$MCP_FILE', JSON.stringify(cfg, null, 2));
+  "
 else
-  # Write full MCP config with all servers
   cat > "$MCP_FILE" <<'MCPEOF'
 {
   "mcpServers": {
@@ -146,16 +172,13 @@ else
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
+    "duckduckgo-search": {
+      "command": "npx",
+      "args": ["-y", "duck-duck-mcp"]
+    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
-    },
-    "brave-search": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
-      "env": {
-        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
-      }
     },
     "postgres": {
       "command": "npx",
@@ -165,32 +188,13 @@ else
 }
 MCPEOF
 fi
+
 success "MCP servers configured → ~/.claude/.mcp.json"
-info "  ✓ n8n-mcp            — 1,396 n8n nodes, 2,709 templates"
-info "  ✓ sequential-thinking — structured reasoning (active now)"
-info "  ✓ context7           — live library docs (active now)"
-info "  ⚠ brave-search       — replace YOUR_BRAVE_API_KEY (free at brave.com/search/api)"
-info "  ⚠ postgres           — replace connection string when you have a DB"
-
-# ── 6. browser-use ────────────────────────────────────────────────────────────
-header "6/6  browser-use (browser automation)"
-
-# Install skill file
-mkdir -p "$CLAUDE_DIR/skills/browser-use"
-curl -fsSL -o "$CLAUDE_DIR/skills/browser-use/SKILL.md" \
-  https://raw.githubusercontent.com/browser-use/browser-use/main/skills/browser-use/SKILL.md
-success "browser-use skill installed → ~/.claude/skills/browser-use/"
-
-# Install CLI tool via uv
-export PATH="$HOME/.local/bin:$PATH"
-if command -v uv >/dev/null 2>&1; then
-  uv tool install browser-use 2>&1 | tail -3 || warn "browser-use CLI install had warnings (continuing)"
-  success "browser-use CLI installed"
-  info "  Install Chromium: uvx browser-use install"
-  info "  Browser automation is now available via \`browser-use\` command"
-else
-  warn "uv not found — skipping browser-use CLI install. Install uv then run: uv tool install browser-use"
-fi
+info "  ✓ n8n-mcp             — 1,396 n8n nodes, 2,709 templates"
+info "  ✓ sequential-thinking — structured reasoning"
+info "  ✓ duckduckgo-search   — web search, no API key needed"
+info "  ✓ context7            — live library documentation"
+info "  ⚠ postgres            — edit ~/.claude/.mcp.json with your DB connection string"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
@@ -206,18 +210,17 @@ echo "  ✓ claude-mem           — persistent cross-session memory"
 echo "  ✓ browser-use          — browser automation skill + CLI"
 echo "  ✓ n8n-mcp              — n8n workflow MCP server (1,396 nodes)"
 echo "  ✓ sequential-thinking  — structured reasoning MCP"
+echo "  ✓ duckduckgo-search    — web search MCP (free, no API key)"
 echo "  ✓ context7             — live library documentation MCP"
-echo "  ⚠ brave-search         — needs BRAVE_API_KEY (free)"
-echo "  ⚠ postgres             — needs your DB connection string"
+echo "  ⚠ postgres             — add your DB connection string when ready"
 echo ""
-echo -e "${BOLD}Action required — fill in ~/.claude/.mcp.json:${RESET}"
-echo "  1. Brave Search API key → https://brave.com/search/api  (free, 2k req/month)"
-echo "  2. Postgres connection  → postgresql://user:pass@host:5432/dbname"
+echo -e "${BOLD}One optional step:${RESET}"
+echo "  Edit ~/.claude/.mcp.json → replace the postgres connection string with yours"
+echo "  (skip this if you don't have a database project yet)"
 echo ""
 echo -e "${BOLD}Next steps:${RESET}"
-echo "  1. Start a new Claude Code session — all skills activate automatically"
-echo "  2. Run \`uvx browser-use install\` to install Chromium for browser automation"
-echo "  3. Fill in the two API keys above in ~/.claude/.mcp.json"
+echo "  1. Start a new Claude Code session — everything activates automatically"
+echo "  2. Run \`uvx browser-use install\` to add Chromium for browser automation"
 echo ""
 echo -e "${CYAN}Repo: https://github.com/amritak47/amrit${RESET}"
 echo ""
