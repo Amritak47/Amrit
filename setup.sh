@@ -6,12 +6,16 @@
 # Claude Code CLI. Run once per machine/user account.
 #
 # What this installs:
-#   1. uipro-cli       — UI/UX Pro Max skill (67 styles, 161 palettes)
-#   2. superpowers     — Agentic dev methodology (TDD, debugging, code review)
+#   1. uipro-cli            — UI/UX Pro Max skill (67 styles, 161 palettes)
+#   2. superpowers          — Agentic dev methodology (TDD, debugging, code review)
 #   3. everything-claude-code — Full agent harness (140 skills, 38 agents)
-#   4. claude-mem      — Persistent cross-session memory
-#   5. n8n-mcp         — n8n workflow MCP server (1,396 nodes, 2,709 templates)
-#   6. browser-use     — Browser automation skill + CLI
+#   4. claude-mem           — Persistent cross-session memory
+#   5. n8n-mcp              — n8n workflow MCP server (1,396 nodes, 2,709 templates)
+#   6. browser-use          — Browser automation skill + CLI
+#   7. sequential-thinking  — Structured reasoning MCP (no API key needed)
+#   8. context7             — Live library documentation MCP (no API key needed)
+#   9. brave-search         — Web search MCP (requires free BRAVE_API_KEY)
+#  10. postgres             — Database MCP (requires connection string)
 #
 # Usage:
 #   chmod +x setup.sh && ./setup.sh
@@ -125,6 +129,7 @@ if [ -f "$MCP_FILE" ]; then
     "
   fi
 else
+  # Write full MCP config with all servers
   cat > "$MCP_FILE" <<'MCPEOF'
 {
   "mcpServers": {
@@ -136,14 +141,36 @@ else
         "LOG_LEVEL": "error",
         "DISABLE_CONSOLE_OUTPUT": "true"
       }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "YOUR_BRAVE_API_KEY"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:password@localhost:5432/mydb"]
     }
   }
 }
 MCPEOF
 fi
-success "n8n-mcp configured → ~/.claude/.mcp.json"
-info "  Provides: 1,396 n8n nodes, 2,709 workflow templates"
-info "  Optional: set N8N_API_URL + N8N_API_KEY in .mcp.json for live n8n access"
+success "MCP servers configured → ~/.claude/.mcp.json"
+info "  ✓ n8n-mcp            — 1,396 n8n nodes, 2,709 templates"
+info "  ✓ sequential-thinking — structured reasoning (active now)"
+info "  ✓ context7           — live library docs (active now)"
+info "  ⚠ brave-search       — replace YOUR_BRAVE_API_KEY (free at brave.com/search/api)"
+info "  ⚠ postgres           — replace connection string when you have a DB"
 
 # ── 6. browser-use ────────────────────────────────────────────────────────────
 header "6/6  browser-use (browser automation)"
@@ -172,17 +199,25 @@ echo -e "${BOLD}${GREEN}  Setup complete!${RESET}"
 echo -e "${BOLD}${GREEN}════════════════════════════════════════${RESET}"
 echo ""
 echo -e "${BOLD}Installed stack:${RESET}"
-echo "  ✓ UI/UX Pro Max     — design intelligence (67 styles, 161 palettes)"
-echo "  ✓ Superpowers       — agentic methodology (TDD, debug, code review)"
-echo "  ✓ Everything CC     — full harness (140 skills, 38 agents, 72 commands)"
-echo "  ✓ claude-mem        — persistent cross-session memory"
-echo "  ✓ n8n-mcp           — n8n workflow MCP server"
-echo "  ✓ browser-use       — browser automation skill + CLI"
+echo "  ✓ UI/UX Pro Max        — design intelligence (67 styles, 161 palettes)"
+echo "  ✓ Superpowers          — agentic methodology (TDD, debug, code review)"
+echo "  ✓ Everything CC        — full harness (140 skills, 38 agents, 72 commands)"
+echo "  ✓ claude-mem           — persistent cross-session memory"
+echo "  ✓ browser-use          — browser automation skill + CLI"
+echo "  ✓ n8n-mcp              — n8n workflow MCP server (1,396 nodes)"
+echo "  ✓ sequential-thinking  — structured reasoning MCP"
+echo "  ✓ context7             — live library documentation MCP"
+echo "  ⚠ brave-search         — needs BRAVE_API_KEY (free)"
+echo "  ⚠ postgres             — needs your DB connection string"
+echo ""
+echo -e "${BOLD}Action required — fill in ~/.claude/.mcp.json:${RESET}"
+echo "  1. Brave Search API key → https://brave.com/search/api  (free, 2k req/month)"
+echo "  2. Postgres connection  → postgresql://user:pass@host:5432/dbname"
 echo ""
 echo -e "${BOLD}Next steps:${RESET}"
 echo "  1. Start a new Claude Code session — all skills activate automatically"
 echo "  2. Run \`uvx browser-use install\` to install Chromium for browser automation"
-echo "  3. Edit ~/.claude/.mcp.json to add your N8N_API_URL / N8N_API_KEY if needed"
+echo "  3. Fill in the two API keys above in ~/.claude/.mcp.json"
 echo ""
 echo -e "${CYAN}Repo: https://github.com/amritak47/amrit${RESET}"
 echo ""
