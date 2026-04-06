@@ -15,20 +15,37 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const { category } = await searchParams;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Page header */}
-      <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <p className="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-widest mb-1">
+      <div
+        className="relative overflow-hidden"
+        style={{
+          background: 'var(--bg-1)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      >
+        {/* Subtle gold glow */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 50% 100% at 0% 50%, rgba(212,175,55,0.06) 0%, transparent 70%)',
+          }}
+        />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-2"
+            style={{ color: 'var(--gold)' }}
+          >
             Gadgets Park Nepal
           </p>
           <h1
-            className="text-3xl sm:text-4xl font-bold text-[var(--color-text)] tracking-tight"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="text-4xl sm:text-5xl font-bold tracking-tight mb-3"
+            style={{ color: 'var(--text)' }}
           >
             All Products
           </h1>
-          <p className="mt-2 text-[var(--color-text-secondary)]">
+          <p className="text-base" style={{ color: 'var(--text-muted)' }}>
             Genuine devices. Fast delivery. Best prices in Nepal.
           </p>
         </div>
