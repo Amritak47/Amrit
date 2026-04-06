@@ -1,7 +1,52 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Setting up Gadgets Park Nepal..."
+echo ""
+echo "======================================"
+echo "  Gadgets Park Nepal — Full Setup"
+echo "======================================"
+echo ""
+
+# ── 1. Homebrew ──
+if ! command -v brew &>/dev/null; then
+  echo "▶ Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null || true
+else
+  echo "✅ Homebrew already installed"
+fi
+
+# ── 2. Node.js ──
+if ! command -v node &>/dev/null; then
+  echo "▶ Installing Node.js..."
+  brew install node
+else
+  echo "✅ Node.js $(node --version) already installed"
+fi
+
+# ── 3. VS Code 'code' CLI ──
+if ! command -v code &>/dev/null; then
+  echo "▶ Installing VS Code CLI..."
+  # Try default VS Code app locations
+  for vscode_path in \
+    "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" \
+    "$HOME/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"; do
+    if [ -f "$vscode_path" ]; then
+      ln -sf "$vscode_path" /usr/local/bin/code 2>/dev/null || sudo ln -sf "$vscode_path" /usr/local/bin/code
+      echo "✅ VS Code CLI linked"
+      break
+    fi
+  done
+  if ! command -v code &>/dev/null; then
+    echo "⚠️  VS Code not found — install from https://code.visualstudio.com then re-run"
+  fi
+else
+  echo "✅ VS Code CLI ready"
+fi
+
+echo ""
+echo "▶ Creating project files..."
+echo ""
 
 # Create project
 mkdir -p ~/gadgets-park-nepal
@@ -360,11 +405,21 @@ echo "📦 Installing dependencies..."
 npm install
 
 echo ""
-echo "✅ Done! Opening in VS Code..."
-code .
+echo "======================================"
+echo "  ✅ All done!"
+echo "======================================"
+echo ""
+
+# Open in VS Code
+if command -v code &>/dev/null; then
+  code .
+  echo "✅ Opened in VS Code"
+else
+  echo "⚠️  Open VS Code manually and open: ~/gadgets-park-nepal"
+fi
 
 echo ""
-echo "🌐 Starting dev server..."
-echo "   → Open http://localhost:3000 in your browser"
+echo "Starting dev server → http://localhost:3000"
+echo "Press Ctrl+C to stop"
 echo ""
 npm run dev
