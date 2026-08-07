@@ -91,7 +91,8 @@ export default function MarkScreen({ students, attendance, term, week, day, tota
             background: colors.white,
             padding: '0 16px',
             fontSize: 17,
-            color: colors.ink
+            color: colors.ink,
+            textOverflow: 'ellipsis'
           }}
         />
         <div

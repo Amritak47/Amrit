@@ -63,6 +63,7 @@ export const api = {
   addStudent: (student) => request('/students', { method: 'POST', body: student, auth: true }),
   bulkAddStudents: (entries) => request('/students/bulk', { method: 'POST', body: { entries }, auth: true }),
   editStudent: (id, patch) => request(`/students/${id}`, { method: 'PUT', body: patch, auth: true }),
+  deleteStudent: (id) => request(`/students/${id}`, { method: 'DELETE', auth: true }),
   toggleActive: (id) => request(`/students/${id}/toggle-active`, { method: 'PATCH', auth: true }),
   moveStudent: (id, direction) => request(`/students/${id}/move`, { method: 'POST', body: { direction }, auth: true }),
 

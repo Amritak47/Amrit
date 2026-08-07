@@ -89,7 +89,8 @@ All endpoints are under `/api`. Endpoints marked **PIN** require an
 | POST | `/students` | PIN | add one student |
 | POST | `/students/bulk` | PIN | add many students (paste-list / Excel import) |
 | PUT | `/students/:id` | PIN | edit name/class |
-| PATCH | `/students/:id/toggle-active` | PIN | activate/deactivate (no hard delete) |
+| DELETE | `/students/:id` | PIN | hard delete a student + their attendance history |
+| PATCH | `/students/:id/toggle-active` | PIN | activate/deactivate (soft, keeps history) |
 | POST | `/students/:id/move` | PIN | reorder within the full roster |
 | GET | `/attendance?term=&week=&day=` | — | one day's `{studentId: count}` map |
 | POST | `/attendance/toggle` | — | cycle one student's count 0→1→2→3→0 |
@@ -121,8 +122,16 @@ only the row/column structure.
 - Session tokens live in `sessionStorage` on the client (not `localStorage`),
   which is what gives the "stays unlocked until you lock it or close the tab"
   behavior the design spec calls for, without any client-side PIN check.
-- No student is ever hard-deleted — only the active/inactive toggle exists,
-  matching the original design spec.
+- Students can be hard-deleted (with a confirm prompt, from the Students
+  screen's edit mode) — this cascades to their attendance history too. This
+  is a deliberate departure from the original design spec (which only had
+  an active/inactive toggle), added for cleaning up typos/duplicates while
+  setting up a real roster. Prefer Inactive over Delete once a student has
+  real attendance history you want to keep in reports/exports.
 - Class is optional on every student — left blank for names not yet sorted
   into Transition/Preschool/Year 1-6; the Students screen has a "No class"
   filter chip to find them.
+- The header wraps onto two lines (branding on top, nav below) instead of
+  overflowing or word-wrapping, since it doesn't quite fit on one line at
+  iPad portrait widths (~768-810px) once the lock icon is showing — verified
+  across iPad mini/regular/Air/Pro at both orientations.

@@ -101,7 +101,19 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(serializeStudent(row));
 });
 
-// PATCH /api/students/:id/toggle-active -> flip active/inactive. No delete action by design.
+// DELETE /api/students/:id -> hard delete a student and their attendance history
+// (attendance rows cascade via the FK). For clearing out typos/duplicates while
+// setting up a roster. Toggle-active (below) is the normal "no longer here but
+// keep their history" path.
+router.delete('/:id', requireAuth, (req, res) => {
+  const id = Number(req.params.id);
+  const existing = getStudentOr404(id, res);
+  if (!existing) return;
+  db.prepare('DELETE FROM students WHERE id = ?').run(id);
+  res.status(204).end();
+});
+
+// PATCH /api/students/:id/toggle-active -> flip active/inactive.
 router.patch('/:id/toggle-active', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   const existing = getStudentOr404(id, res);

@@ -151,6 +151,7 @@ export default function App() {
           onAddStudent={withReload((s) => api.addStudent(s))}
           onBulkAdd={withReload((entries) => api.bulkAddStudents(entries))}
           onEdit={withReload((id, patch) => api.editStudent(id, patch))}
+          onDelete={withReload((id) => api.deleteStudent(id))}
           onToggleActive={withReload((id) => api.toggleActive(id))}
           onMove={withReload((id, dir) => api.moveStudent(id, dir))}
         />

@@ -12,15 +12,16 @@ export default function Header({ screen, onNavigate, pinUnlocked, onLock }) {
   return (
     <div
       style={{
-        height: 72,
+        minHeight: 72,
         flexShrink: 0,
         background: colors.white,
         borderBottom: `2px solid ${colors.border}`,
         display: 'flex',
+        flexWrap: 'wrap',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 24px',
-        gap: 16
+        padding: '10px 24px',
+        gap: '8px 16px'
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -36,7 +37,8 @@ export default function Header({ screen, onNavigate, pinUnlocked, onLock }) {
               fontWeight: 600,
               letterSpacing: '0.09em',
               textTransform: 'uppercase',
-              color: colors.mutedText2
+              color: colors.mutedText2,
+              whiteSpace: 'nowrap'
             }}
           >
             Moil Primary School
@@ -46,7 +48,7 @@ export default function Header({ screen, onNavigate, pinUnlocked, onLock }) {
           </span>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         {NAV_ITEMS.map((nav) => (
           <button key={nav.key} onClick={() => onNavigate(nav.key)} style={screen === nav.key ? navActive : navBase}>
             {nav.label}

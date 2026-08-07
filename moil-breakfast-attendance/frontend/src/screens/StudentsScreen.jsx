@@ -19,7 +19,7 @@ function parseLine(line, defaultClass) {
   return { first, last, klass: klass || defaultClass };
 }
 
-export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEdit, onToggleActive, onMove }) {
+export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEdit, onDelete, onToggleActive, onMove }) {
   const [addOpen, setAddOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addFirst, setAddFirst] = useState('');
@@ -111,6 +111,12 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
   };
   const saveEdit = () => {
     onEdit(editingId, { first: editFirst.trim() || undefined, last: editLast.trim(), klass: editClass });
+    setEditingId(null);
+  };
+  const deleteEditing = () => {
+    const name = `${editFirst} ${editLast}`.trim();
+    if (!window.confirm(`Delete ${name}? This also removes their attendance history. This can't be undone.`)) return;
+    onDelete(editingId);
     setEditingId(null);
   };
 
@@ -279,6 +285,12 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
                     style={{ height: 46, padding: '0 14px', borderRadius: 10, border: `2px solid ${colors.border}`, background: '#fff', color: colors.mutedText, cursor: 'pointer' }}
                   >
                     Cancel
+                  </button>
+                  <button
+                    onClick={deleteEditing}
+                    style={{ height: 46, padding: '0 14px', borderRadius: 10, border: `2px solid ${colors.primary}`, background: '#fff', color: colors.primary, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Delete
                   </button>
                 </div>
               ) : (
