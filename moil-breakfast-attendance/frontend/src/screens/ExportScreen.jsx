@@ -6,61 +6,75 @@ import { api } from '../api.js';
 const tabActive = { ...pillActive, height: 36, fontSize: 13, padding: '0 14px', background: colors.primaryDark, border: `2px solid ${colors.primaryDark}` };
 const tabBase = { ...pillBase, height: 36, fontSize: 13, padding: '0 14px' };
 
-function buildWorkbook(full) {
+// One sheet per term, weeks laid out side by side (Student's Name column, then
+// a Mon-Fri block per week, then a TOTALS row) — matching the school's existing
+// Foodbank/DSBP attendance log format, rather than a sheet per term-week.
+function buildTermSheet(t, full) {
   const { students, attendance, totalWeeks } = full;
   const activeStudents = [...students].sort((a, b) => a.order - b.order);
-  const wb = XLSX.utils.book_new();
-  const cols = [{ wch: 24 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }];
-  const summaryRows = [['Moil Primary School — Breakfast Club: Term Summary'], [''], ['Term', 'Week', 'Students present', 'Total servings']];
+  const totalCols = 1 + totalWeeks * 5;
 
-  for (let t = 1; t <= 4; t += 1) {
-    let termServes = 0;
-    let termPresent = 0;
-    for (let w = 1; w <= totalWeeks; w += 1) {
-      const rows = [
-        ['Moil Primary School — Breakfast Club', '', '', '', '', '', ''],
-        [`Term ${t}  |  Week ${w}`, '', '', '', '', '', ''],
-        ['', '', '', '', '', '', ''],
-        ['Student', 'Class', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-      ];
-      const dayPresent = [0, 0, 0, 0, 0];
-      const dayServes = [0, 0, 0, 0, 0];
-      activeStudents.forEach((st) => {
-        const row = [`${st.first} ${st.last}`.trim(), st.klass];
-        DAYS.forEach((d, di) => {
-          const c = (attendance[`${t}-${w}-${d}`] || {})[st.id] || 0;
-          row.push(c > 0 ? c : '');
-          if (c > 0) {
-            dayPresent[di] += 1;
-            dayServes[di] += c;
-          }
-        });
-        rows.push(row);
-      });
-      rows.push(['', '', '', '', '', '', '']);
-      rows.push(['', 'Students present', ...dayPresent]);
-      rows.push(['', 'Total servings', ...dayServes]);
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = cols;
-      ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }
-      ];
-      XLSX.utils.book_append_sheet(wb, ws, `T${t} W${w}`);
-      const weekServes = dayServes.reduce((a, b) => a + b, 0);
-      const weekPresent = dayPresent.reduce((a, b) => a + b, 0);
-      termServes += weekServes;
-      termPresent += weekPresent;
-      summaryRows.push([`Term ${t}`, `Week ${w}`, weekPresent, weekServes]);
-    }
-    summaryRows.push([`Term ${t} total`, '', termPresent, termServes]);
-    summaryRows.push(['', '', '', '']);
+  const titleRow = new Array(totalCols).fill('');
+  titleRow[0] = 'Moil Primary School — Breakfast Club';
+  const subtitleRow = new Array(totalCols).fill('');
+  subtitleRow[0] = `Foodbank Attendance Log — Term ${t}`;
+
+  const weekHeaderRow = new Array(totalCols).fill('');
+  weekHeaderRow[0] = "Student's Name";
+  const dayHeaderRow = new Array(totalCols).fill('');
+
+  for (let w = 1; w <= totalWeeks; w += 1) {
+    const startCol = 1 + (w - 1) * 5;
+    weekHeaderRow[startCol] = `W${w}`;
+    DAYS.forEach((d, di) => {
+      dayHeaderRow[startCol + di] = d;
+    });
   }
-  const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
-  summaryWs['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 14 }];
-  summaryWs['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
-  XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-  wb.SheetNames.unshift(wb.SheetNames.pop());
+
+  const rows = [titleRow, subtitleRow, weekHeaderRow, dayHeaderRow];
+  const dayTotals = new Array(totalWeeks * 5).fill(0);
+
+  activeStudents.forEach((st) => {
+    const row = new Array(totalCols).fill('');
+    row[0] = `${st.first} ${st.last}`.trim();
+    for (let w = 1; w <= totalWeeks; w += 1) {
+      const startCol = 1 + (w - 1) * 5;
+      DAYS.forEach((d, di) => {
+        const c = (attendance[`${t}-${w}-${d}`] || {})[st.id] || 0;
+        row[startCol + di] = c > 0 ? c : '';
+        dayTotals[(w - 1) * 5 + di] += c;
+      });
+    }
+    rows.push(row);
+  });
+
+  const totalsRow = new Array(totalCols).fill('');
+  totalsRow[0] = 'TOTALS';
+  dayTotals.forEach((v, i) => {
+    totalsRow[1 + i] = v;
+  });
+  rows.push(totalsRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 22 }, ...new Array(totalWeeks * 5).fill({ wch: 5 })];
+  const merges = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 3, c: 0 } }
+  ];
+  for (let w = 1; w <= totalWeeks; w += 1) {
+    const startCol = 1 + (w - 1) * 5;
+    merges.push({ s: { r: 2, c: startCol }, e: { r: 2, c: startCol + 4 } });
+  }
+  ws['!merges'] = merges;
+  return ws;
+}
+
+function buildWorkbook(full) {
+  const wb = XLSX.utils.book_new();
+  for (let t = 1; t <= 4; t += 1) {
+    XLSX.utils.book_append_sheet(wb, buildTermSheet(t, full), `Term ${t}`);
+  }
   return wb;
 }
 
@@ -118,7 +132,9 @@ export default function ExportScreen({ defaultTerm }) {
       >
         <div>
           <div style={{ fontFamily: "'Bitter', serif", fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Download attendance</div>
-          <div style={{ color: colors.mutedText, fontSize: 15 }}>One worksheet per week, Week 1 to Week {totalWeeks}, in roster order.</div>
+          <div style={{ color: colors.mutedText, fontSize: 15 }}>
+            One worksheet per term (Week 1 to Week {totalWeeks} side by side), in roster order, with a TOTALS row.
+          </div>
         </div>
         <button
           onClick={download}

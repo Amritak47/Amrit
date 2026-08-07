@@ -47,28 +47,12 @@ db.exec(`
   );
 `);
 
-// Seed the staff PIN on first run only.
+// Seed the staff PIN on first run only. The roster itself starts empty on a
+// fresh database — real student names go in via the Students screen (add
+// one at a time, paste a list, or import an Excel file).
 const pinRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('pin_hash');
 if (!pinRow) {
   db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('pin_hash', hashPin(DEFAULT_PIN));
-}
-
-// Seed the placeholder roster on first run only (empty students table), so the
-// app is immediately usable. Real schools should replace this via the Students
-// screen or a fresh import.
-const studentCount = db.prepare('SELECT COUNT(*) AS n FROM students').get().n;
-if (studentCount === 0) {
-  const seedPath = path.join(__dirname, 'data', 'students-seed.json');
-  if (fs.existsSync(seedPath)) {
-    const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
-    const insert = db.prepare(
-      'INSERT INTO students (first_name, last_name, klass, active, sort_order) VALUES (@first, @last, @klass, @active, @order)'
-    );
-    const insertMany = db.transaction((rows) => {
-      rows.forEach((r) => insert.run({ ...r, active: r.active ? 1 : 0 }));
-    });
-    insertMany(seed);
-  }
 }
 
 module.exports = db;

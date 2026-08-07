@@ -175,19 +175,21 @@ export default function MarkScreen({ students, attendance, term, week, day, tota
                 >
                   {st.first} {st.last}
                 </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: colors.mutedText2,
-                    background: colors.chipBg,
-                    borderRadius: 999,
-                    padding: '4px 10px',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {st.klass}
-                </span>
+                {st.klass && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: colors.mutedText2,
+                      background: colors.chipBg,
+                      borderRadius: 999,
+                      padding: '4px 10px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {st.klass}
+                  </span>
+                )}
               </div>
               <div
                 style={{

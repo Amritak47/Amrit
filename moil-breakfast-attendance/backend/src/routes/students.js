@@ -11,9 +11,12 @@ function nextSortOrder() {
   return (row.m ?? -1) + 1;
 }
 
+// Class is optional: an empty/unrecognized value is stored as '' (no class
+// assigned) rather than forced onto a default class. Only a recognized
+// value from CLASSES is stored as-is.
 function normalizeClass(klass) {
   const k = String(klass || '').trim();
-  return CLASSES.includes(k) ? k : CLASSES[0];
+  return CLASSES.includes(k) ? k : '';
 }
 
 function getStudentOr404(id, res) {

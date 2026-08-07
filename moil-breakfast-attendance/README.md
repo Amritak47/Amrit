@@ -45,13 +45,12 @@ npm install
 npm run dev             # http://localhost:4000
 ```
 
-On first run this creates `backend/data/moil.sqlite`, seeds the staff PIN
-(`2468` by default — change it from the Settings screen or `DEFAULT_PIN` in
-`.env` before first run), and seeds the roster from the placeholder 150-name
-list bundled with the design handoff (`backend/src/data/students-seed.json`).
-Replace that roster with the school's real students via the Students screen
-(add one at a time, paste a list, or import an Excel file) — there's no
-migration needed, it's just normal roster edits.
+On first run this creates `backend/data/moil.sqlite` and seeds the staff PIN
+(`0000` by default — change it from the Settings screen or `DEFAULT_PIN` in
+`.env` before first run). The roster itself starts **empty** — add the
+school's real students via the Students screen (one at a time, paste a
+list, or import an Excel file). Class is optional per student; leave it
+unset for names not yet sorted into a class.
 
 ### 2. Frontend
 
@@ -64,7 +63,7 @@ npm run dev              # http://localhost:5173
 
 Open http://localhost:5173, tap "Open sign-in sheet", and you're on the Mark
 screen. Tap any of Students / Reports / Export / Settings to hit the PIN
-modal (default PIN `2468`).
+modal (default PIN `0000`).
 
 ### Deploying for real use at the school
 
@@ -100,15 +99,30 @@ All endpoints are under `/api`. Endpoints marked **PIN** require an
 | GET | `/export/full` | PIN | full dataset for the client-side Excel export |
 | PUT | `/settings/pin` | PIN | change the staff PIN |
 
+## Excel export format
+
+The download on the Export screen produces one worksheet per term (`Term 1`
+through `Term 4`), matching the school's existing Foodbank/DSBP attendance
+log layout rather than the original prototype's one-sheet-per-week format:
+a `Student's Name` column, then a merged `Mon-Fri` block per week (`W1`
+through `W{totalWeeks}`) laid out side by side, students in roster order,
+and a `TOTALS` row at the bottom summing each day column across the whole
+term. Note: the free SheetJS build this app uses (`xlsx` on npm) can write
+merged cells and column widths but not cell fill colors/fonts, so the sheet
+won't have the green/grey header shading of the school's original template —
+only the row/column structure.
+
 ## Notes / known tradeoffs
 
 - The Excel import/export still runs through SheetJS in the **browser**
-  (same as the original prototype) rather than a server-side xlsx library —
-  keeps the exact same worksheet layout the design spec calls for, and avoids
-  a second xlsx-parsing implementation to keep in sync. Import is behind the
-  PIN-gated Students screen, so it's trusted staff uploading trusted files.
+  rather than a server-side xlsx library, avoiding a second xlsx-parsing
+  implementation to keep in sync. Import is behind the PIN-gated Students
+  screen, so it's trusted staff uploading trusted files.
 - Session tokens live in `sessionStorage` on the client (not `localStorage`),
   which is what gives the "stays unlocked until you lock it or close the tab"
   behavior the design spec calls for, without any client-side PIN check.
 - No student is ever hard-deleted — only the active/inactive toggle exists,
   matching the original design spec.
+- Class is optional on every student — left blank for names not yet sorted
+  into Transition/Preschool/Year 1-6; the Students screen has a "No class"
+  filter chip to find them.

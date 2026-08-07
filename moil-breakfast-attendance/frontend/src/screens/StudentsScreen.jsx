@@ -2,6 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { colors, pillBase, pillActive, CLASSES } from '../tokens.js';
 
+const NO_CLASS = '';
+const NO_CLASS_FILTER = 'No class';
+
 function parseLine(line, defaultClass) {
   const parts0 = line.split(/,| - /);
   let name = line;
@@ -21,9 +24,9 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addFirst, setAddFirst] = useState('');
   const [addLast, setAddLast] = useState('');
-  const [addClass, setAddClass] = useState(CLASSES[0]);
+  const [addClass, setAddClass] = useState(NO_CLASS);
   const [bulkText, setBulkText] = useState('');
-  const [bulkClass, setBulkClass] = useState(CLASSES[0]);
+  const [bulkClass, setBulkClass] = useState(NO_CLASS);
   const [classFilter, setClassFilter] = useState('All');
   const [editingId, setEditingId] = useState(null);
   const [editFirst, setEditFirst] = useState('');
@@ -35,10 +38,11 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
   const totalActive = students.filter((s) => s.active).length;
 
   const fullSorted = useMemo(() => [...students].sort((a, b) => a.order - b.order), [students]);
-  const filteredSorted = useMemo(
-    () => (classFilter === 'All' ? fullSorted : fullSorted.filter((s) => s.klass === classFilter)),
-    [fullSorted, classFilter]
-  );
+  const filteredSorted = useMemo(() => {
+    if (classFilter === 'All') return fullSorted;
+    if (classFilter === NO_CLASS_FILTER) return fullSorted.filter((s) => !s.klass);
+    return fullSorted.filter((s) => s.klass === classFilter);
+  }, [fullSorted, classFilter]);
 
   const bulkPreviewCount = bulkText
     .split('\n')
@@ -47,14 +51,14 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
 
   const submitAdd = () => {
     if (!addFirst.trim()) return;
-    onAddStudent({ first: addFirst.trim(), last: addLast.trim(), klass: addClass || CLASSES[0] });
+    onAddStudent({ first: addFirst.trim(), last: addLast.trim(), klass: addClass });
     setAddFirst('');
     setAddLast('');
   };
 
   const submitBulk = () => {
     const lines = bulkText.split('\n').map((l) => l.trim()).filter(Boolean);
-    const entries = lines.map((line) => parseLine(line, bulkClass || CLASSES[0]));
+    const entries = lines.map((line) => parseLine(line, bulkClass));
     if (entries.length === 0) return;
     onBulkAdd(entries);
     setBulkText('');
@@ -70,7 +74,7 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
       const wb = XLSX.read(data, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }).filter((r) => r && r.length && String(r[0]).trim());
-      const defaultClass = CLASSES[0];
+      const defaultClass = NO_CLASS;
       const entries = [];
       rows.forEach((row) => {
         const c0 = String(row[0]).trim();
@@ -172,6 +176,7 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
             style={inputStyle({ flex: 1, minWidth: 140, height: 48 })}
           />
           <select value={addClass} onChange={(e) => setAddClass(e.target.value)} style={selectStyle({ height: 48 })}>
+            <option value="">No class</option>
             {CLASSES.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -203,6 +208,7 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, color: colors.mutedText }}>Default class for lines without one:</span>
             <select value={bulkClass} onChange={(e) => setBulkClass(e.target.value)} style={selectStyle({ height: 44 })}>
+              <option value="">No class</option>
               {CLASSES.map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
@@ -217,7 +223,7 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
       )}
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-        {['All', ...CLASSES].map((c) => (
+        {['All', NO_CLASS_FILTER, ...CLASSES].map((c) => (
           <button key={c} onClick={() => setClassFilter(c)} style={chipStyle(classFilter === c)}>
             {c}
           </button>
@@ -258,6 +264,7 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
                   <input value={editFirst} onChange={(e) => setEditFirst(e.target.value)} style={inputStyle({ flex: 1, minWidth: 120, height: 46 })} />
                   <input value={editLast} onChange={(e) => setEditLast(e.target.value)} style={inputStyle({ flex: 1, minWidth: 120, height: 46 })} />
                   <select value={editClass} onChange={(e) => setEditClass(e.target.value)} style={selectStyle({ height: 46, fontSize: 14 })}>
+                    <option value="">No class</option>
                     {CLASSES.map((opt) => (
                       <option key={opt} value={opt}>
                         {opt}
@@ -289,8 +296,14 @@ export default function StudentsScreen({ students, onAddStudent, onBulkAdd, onEd
                   >
                     {st.first} {st.last}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: colors.mutedText2, background: colors.chipBg, borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
-                    {st.klass}
+                  <span
+                    style={
+                      st.klass
+                        ? { fontSize: 12, fontWeight: 600, color: colors.mutedText2, background: colors.chipBg, borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' }
+                        : { fontSize: 12, fontWeight: 600, color: '#A79A82', background: 'transparent', border: `1px dashed ${colors.border}`, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }
+                    }
+                  >
+                    {st.klass || 'No class'}
                   </span>
                 </div>
               )}
