@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { margin: 0; background: #FCF8F2; }
+    * { box-sizing: border-box; font-family: 'Public Sans', sans-serif; }
+    ::placeholder { color: #A79A82; }
+    @keyframes pinShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  </style>
+</helmet>
+
+<div style="width: 100vw; height: 100vh; display: flex; flex-direction: column; background: #FCF8F2; color: #2B241E; overflow: hidden;">
+
+  <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 24px; text-align: center;">
+      <img src="assets/moil-logo.png" alt="Moil Primary School logo" style="width: 140px; height: 140px; object-fit: contain;"/>
+      <div>
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8A7A63; margin-bottom: 8px;">Moil Primary School</div>
+        <div style="font-family: 'Bitter', serif; font-size: 40px; font-weight: 700; color: #2B241E;">Breakfast Club</div>
+        <div style="font-size: 17px; color: #6B5F4C; margin-top: 8px;">Daily attendance sign-in</div>
+      </div>
+      <button onClick="{{ openApp }}" style="height: 64px; padding: 0 40px; border-radius: 14px; border: none; background: #B24A2C; color: #FFFFFF; font-weight: 700; font-size: 19px; cursor: pointer; margin-top: 10px;">Open sign-in sheet</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+  <div style="height: 72px; flex-shrink: 0; background: #FFFFFF; border-bottom: 2px solid #E7DCC8; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+      <img src="assets/moil-logo.png" alt="Moil Primary School logo" style="width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; object-fit: contain;"/>
+      <div style="display: flex; flex-direction: column; line-height: 1.15; min-width: 0;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #8A7A63;">Moil Primary School</span>
+        <span style="font-family: 'Bitter', serif; font-size: 21px; font-weight: 700; color: #2B241E; white-space: nowrap;">Breakfast Club</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+      <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="4">
+        <button onClick="{{ nav.onClick }}" style="{{ nav.style }}">{{ nav.label }}</button>
+      </sc-for>
+      <sc-if value="{{ lockVisible }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ lock }}" title="Lock admin screens" style="width: 44px; height: 44px; border-radius: 10px; border: 2px solid #E7DCC8; background: #FFFFFF; color: #8A7A63; font-size: 16px; cursor: pointer; margin-left: 4px;">&#128274;</button>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ isMark }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 18px 24px 0;">
+      <div style="display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; margin-bottom: 14px;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #8A7A63; margin-bottom: 6px;">Term</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{ termsList }}" as="tm" hint-placeholder-count="4">
+              <button onClick="{{ tm.onClick }}" style="{{ tm.style }}">{{ tm.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #8A7A63; margin-bottom: 6px;">Week</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; max-width: 560px;">
+            <sc-for list="{{ weeksList }}" as="wk" hint-placeholder-count="10">
+              <button onClick="{{ wk.onClick }}" style="{{ wk.style }}">{{ wk.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #8A7A63; margin-bottom: 6px;">Day</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{ daysList }}" as="dy" hint-placeholder-count="5">
+              <button onClick="{{ dy.onClick }}" style="{{ dy.style }}">{{ dy.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+        <input value="{{ search }}" onChange="{{ onSearchChange }}" onKeyDown="{{ onSearchKeyDown }}" placeholder="Type a name and press Enter to mark present" style="flex: 1; min-width: 240px; height: 52px; border-radius: 12px; border: 2px solid #E7DCC8; background: #FFFFFF; padding: 0 16px; font-size: 17px; color: #2B241E;"/>
+        <div style="height: 52px; display: flex; align-items: center; padding: 0 18px; border-radius: 12px; background: #EAF1EC; border: 2px solid #C6DBCF; font-weight: 700; font-size: 16px; color: #21493F; white-space: nowrap;">{{ countText }}</div>
+        <button onClick="{{ markEveryone }}" style="height: 52px; padding: 0 18px; border-radius: 12px; border: none; background: #31665A; color: #FFFFFF; font-weight: 700; font-size: 15px; cursor: pointer; white-space: nowrap;">Mark everyone</button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; border: 2px solid #E7DCC8; border-radius: 16px; background: #FFFFFF; margin-bottom: 18px;">
+        <sc-for list="{{ markStudents }}" as="row" hint-placeholder-count="12">
+          <div onClick="{{ row.onClick }}" style="{{ row.rowStyle }}">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span style="font-family: 'Bitter', serif; font-size: 20px; font-weight: 600; color: #2B241E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ row.name }}</span>
+              <sc-if value="{{ row.showClass }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size: 12px; font-weight: 600; color: #8A7A63; background: #F4EEE0; border-radius: 999px; padding: 4px 10px; white-space: nowrap;">{{ row.classLabel }}</span>
+              </sc-if>
+            </div>
+            <div style="{{ row.circleStyle }}">
+              <span style="{{ row.checkStyle }}">{{ row.countLabel }}</span>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ markEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 40px; text-align: center; color: #8A7A63; font-size: 16px;">{{ markEmptyText }}</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStudents }}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 18px 24px 0;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+        <div style="font-size: 15px; color: #6B5F4C;">{{ rosterSummary }}</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button onClick="{{ toggleAdd }}" style="{{ addBtnStyle }}">+ Add student</button>
+          <button onClick="{{ toggleBulk }}" style="{{ bulkBtnStyle }}">Paste a list</button>
+          <button onClick="{{ importClick }}" style="{{ importBtnStyle }}">Import from Excel</button>
+          <input type="file" ref="{{ fileInputRef }}" onChange="{{ onImportFile }}" accept=".xlsx,.xls" style="display: none;"/>
+        </div>
+      </div>
+
+      <sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: #F4EEE0; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+          <input value="{{ addFirst }}" onChange="{{ onAddFirst }}" placeholder="First name" style="height: 48px; flex: 1; min-width: 140px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 14px; font-size: 16px;"/>
+          <input value="{{ addLast }}" onChange="{{ onAddLast }}" placeholder="Last name" style="height: 48px; flex: 1; min-width: 140px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 14px; font-size: 16px;"/>
+          <select value="{{ addClass }}" onChange="{{ onAddClass }}" style="height: 48px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 12px; font-size: 15px; background: #FFFFFF;">
+            <sc-for list="{{ classOptions }}" as="opt" hint-placeholder-count="8">
+              <option value="{{ opt }}">{{ opt }}</option>
+            </sc-for>
+          </select>
+          <button onClick="{{ addStudent }}" style="height: 48px; padding: 0 20px; border-radius: 10px; border: none; background: #B24A2C; color: #FFFFFF; font-weight: 700; cursor: pointer;">Add</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ bulkOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 10px; background: #F4EEE0; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+          <textarea value="{{ bulkText }}" onChange="{{ onBulkText }}" placeholder="One student per line, e.g. Jack Nguyen, Year 3" rows="4" style="width: 100%; border-radius: 10px; border: 2px solid #E7DCC8; padding: 10px 14px; font-size: 15px; resize: vertical;"></textarea>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 13px; color: #6B5F4C;">Default class for lines without one:</span>
+            <select value="{{ bulkClass }}" onChange="{{ onBulkClass }}" style="height: 44px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 12px; font-size: 15px; background: #FFFFFF;">
+              <sc-for list="{{ classOptions }}" as="opt2" hint-placeholder-count="8">
+                <option value="{{ opt2 }}">{{ opt2 }}</option>
+              </sc-for>
+            </select>
+            <button onClick="{{ addBulk }}" style="height: 44px; padding: 0 18px; border-radius: 10px; border: none; background: #B24A2C; color: #FFFFFF; font-weight: 700; cursor: pointer; margin-left: auto;">Add {{ bulkPreviewCount }} students</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+        <sc-for list="{{ classFilterChips }}" as="chip" hint-placeholder-count="9">
+          <button onClick="{{ chip.onClick }}" style="{{ chip.style }}">{{ chip.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; border: 2px solid #E7DCC8; border-radius: 16px; background: #FFFFFF; margin-bottom: 18px;">
+        <sc-for list="{{ studentsView }}" as="st" hint-placeholder-count="10">
+          <div style="display: flex; align-items: center; gap: 14px; padding: 10px 18px; border-bottom: 1px solid #F0E9DA;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <button onClick="{{ st.moveUp }}" disabled="{{ st.upDisabled }}" style="{{ st.upStyle }}">&#9650;</button>
+              <button onClick="{{ st.moveDown }}" disabled="{{ st.downDisabled }}" style="{{ st.downStyle }}">&#9660;</button>
+            </div>
+            <div style="width: 30px; text-align: center; font-size: 13px; color: #A79A82; font-weight: 600;">{{ st.posLabel }}</div>
+
+            <sc-if value="{{ st.isEditing }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; gap: 8px; flex: 1; flex-wrap: wrap; align-items: center;">
+                <input value="{{ editFirst }}" onChange="{{ onEditFirst }}" style="height: 46px; flex: 1; min-width: 120px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 12px; font-size: 15px;"/>
+                <input value="{{ editLast }}" onChange="{{ onEditLast }}" style="height: 46px; flex: 1; min-width: 120px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 12px; font-size: 15px;"/>
+                <select value="{{ editClass }}" onChange="{{ onEditClass }}" style="height: 46px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 10px; font-size: 14px; background: #FFFFFF;">
+                  <sc-for list="{{ classOptions }}" as="opt3" hint-placeholder-count="8">
+                    <option value="{{ opt3 }}">{{ opt3 }}</option>
+                  </sc-for>
+                </select>
+                <button onClick="{{ saveEdit }}" style="height: 46px; padding: 0 16px; border-radius: 10px; border: none; background: #31665A; color: #fff; font-weight: 700; cursor: pointer;">Save</button>
+                <button onClick="{{ cancelEdit }}" style="height: 46px; padding: 0 14px; border-radius: 10px; border: 2px solid #E7DCC8; background: #fff; color: #6B5F4C; cursor: pointer;">Cancel</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ st.isNotEditing }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer;" onClick="{{ st.startEdit }}">
+                <span style="font-family: 'Bitter', serif; font-size: 18px; font-weight: 600; color: #2B241E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ st.displayName }}</span>
+                <span style="font-size: 12px; font-weight: 600; color: #8A7A63; background: #F4EEE0; border-radius: 999px; padding: 4px 10px; white-space: nowrap;">{{ st.klass }}</span>
+              </div>
+            </sc-if>
+
+            <div onClick="{{ st.toggleActive }}" style="{{ st.trackStyle }}">
+              <div style="{{ st.knobStyle }}"></div>
+            </div>
+            <div style="width: 64px; font-size: 12px; font-weight: 700; color: #8A7A63; text-align: right;">{{ st.activeLabel }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isExport }}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 24px 24px 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: #FFFFFF; border: 2px solid #E7DCC8; border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;">
+        <div>
+          <div style="font-family: 'Bitter', serif; font-size: 22px; font-weight: 700; margin-bottom: 4px;">Download attendance</div>
+          <div style="color: #6B5F4C; font-size: 15px;">One worksheet per week, Week 1 to {{ totalWeeksLabel }}, in roster order.</div>
+        </div>
+        <button onClick="{{ exportExcel }}" style="height: 56px; padding: 0 26px; border-radius: 12px; border: none; background: #B24A2C; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; white-space: nowrap;">Download Excel (.xlsx)</button>
+      </div>
+
+      <div style="background: #FFFFFF; border: 2px solid #E7DCC8; border-radius: 16px; padding: 22px 26px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+          <div style="font-family: 'Bitter', serif; font-size: 18px; font-weight: 700;">Where's the data?</div>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{ exportTermTabs }}" as="et" hint-placeholder-count="4">
+              <button onClick="{{ et.onClick }}" style="{{ et.style }}">{{ et.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 56px repeat(5, 1fr); gap: 6px; max-width: 460px;">
+          <div></div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Mon</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Tue</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Wed</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Thu</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Fri</div>
+          <sc-for list="{{ exportGridRows }}" as="wk" hint-placeholder-count="10">
+            <div style="display: contents;">
+              <div style="font-size: 13px; font-weight: 700; color: #8A7A63; display: flex; align-items: center;">{{ wk.label }}</div>
+              <sc-for list="{{ wk.cells }}" as="cell" hint-placeholder-count="5">
+                <div style="{{ cell.style }}"></div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isReports }}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+        <div style="font-family: 'Bitter', serif; font-size: 22px; font-weight: 700;">Attendance report</div>
+        <div style="display: flex; gap: 6px;">
+          <sc-for list="{{ reportTermTabs }}" as="rt" hint-placeholder-count="4">
+            <button onClick="{{ rt.onClick }}" style="{{ rt.style }}">{{ rt.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background: #FFFFFF; border: 2px solid #E7DCC8; border-radius: 16px; padding: 20px 24px; margin-bottom: 18px;">
+        <div style="display: grid; grid-template-columns: 64px repeat(5, 1fr) 90px; gap: 4px; align-items: center;">
+          <div></div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Mon</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Tue</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Wed</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Thu</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Fri</div>
+          <div style="text-align: center; font-size: 12px; font-weight: 700; color: #8A7A63;">Week total</div>
+          <sc-for list="{{ reportRows }}" as="rr" hint-placeholder-count="10">
+            <div style="display: contents;">
+              <div style="font-size: 13px; font-weight: 700; color: #8A7A63; padding: 8px 0;">{{ rr.label }}</div>
+              <sc-for list="{{ rr.cells }}" as="rc" hint-placeholder-count="5">
+                <div style="text-align: center; font-size: 15px; color: #2B241E; padding: 8px 0; border-top: 1px solid #F0E9DA;">{{ rc.value }}</div>
+              </sc-for>
+              <div style="text-align: center; font-size: 15px; font-weight: 700; color: #2B241E; padding: 8px 0; border-top: 1px solid #F0E9DA;">{{ rr.total }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background: #EAF1EC; border: 2px solid #C6DBCF; border-radius: 16px; padding: 22px 26px;">
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #21493F; margin-bottom: 6px;">Term total</div>
+        <div style="font-family: 'Bitter', serif; font-size: 32px; font-weight: 700; color: #21493F;">{{ reportTermTotal }} breakfasts served</div>
+        <div style="color: #3D6B5F; font-size: 14px; margin-top: 4px;">{{ reportSummaryLine }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; overflow-y: auto; padding: 24px;">
+      <div style="background: #FFFFFF; border: 2px solid #E7DCC8; border-radius: 16px; padding: 22px 26px; max-width: 480px; margin-bottom: 18px;">
+        <div style="font-family: 'Bitter', serif; font-size: 18px; font-weight: 700; margin-bottom: 12px;">Staff PIN</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input value="{{ pinSettingsValue }}" onChange="{{ onPinSettings }}" maxlength="4" placeholder="4 digits" style="height: 48px; width: 140px; border-radius: 10px; border: 2px solid #E7DCC8; padding: 0 14px; font-size: 18px; letter-spacing: 0.2em;"/>
+          <button onClick="{{ savePinSettings }}" style="height: 48px; padding: 0 20px; border-radius: 10px; border: none; background: #31665A; color: #fff; font-weight: 700; cursor: pointer;">Save PIN</button>
+        </div>
+        <sc-if value="{{ pinSaved }}" hint-placeholder-val="{{ false }}">
+          <div style="color: #31665A; font-size: 14px; margin-top: 8px; font-weight: 600;">PIN updated.</div>
+        </sc-if>
+      </div>
+      <div style="background: #FFFFFF; border: 2px solid #E7DCC8; border-radius: 16px; padding: 22px 26px; max-width: 480px;">
+        <div style="font-family: 'Bitter', serif; font-size: 18px; font-weight: 700; margin-bottom: 10px;">Session</div>
+        <div style="color: #6B5F4C; font-size: 15px; margin-bottom: 14px;">Admin screens stay unlocked until you lock them or close the tab.</div>
+        <button onClick="{{ lock }}" style="height: 48px; padding: 0 20px; border-radius: 10px; border: 2px solid #E7DCC8; background: #fff; color: #6B5F4C; font-weight: 700; cursor: pointer;">Lock admin screens now</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pinModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; inset: 0; background: rgba(43,36,32,0.55); display: flex; align-items: center; justify-content: center; z-index: 50;">
+      <div style="{{ pinCardStyle }}">
+        <div style="font-family: 'Bitter', serif; font-size: 19px; font-weight: 700; text-align: center; margin-bottom: 4px;">Enter staff PIN</div>
+        <div style="text-align: center; color: #8A7A63; font-size: 14px; margin-bottom: 18px;">to open {{ pinTargetLabel }}</div>
+        <div style="display: flex; justify-content: center; gap: 14px; margin-bottom: 22px;">
+          <sc-for list="{{ pinDots }}" as="dot" hint-placeholder-count="4">
+            <div style="{{ dot.style }}"></div>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; justify-content: center; margin-bottom: 16px;">
+          <button onClick="{{ pinDigit1 }}" style="{{ keyStyle }}">1</button>
+          <button onClick="{{ pinDigit2 }}" style="{{ keyStyle }}">2</button>
+          <button onClick="{{ pinDigit3 }}" style="{{ keyStyle }}">3</button>
+          <button onClick="{{ pinDigit4 }}" style="{{ keyStyle }}">4</button>
+          <button onClick="{{ pinDigit5 }}" style="{{ keyStyle }}">5</button>
+          <button onClick="{{ pinDigit6 }}" style="{{ keyStyle }}">6</button>
+          <button onClick="{{ pinDigit7 }}" style="{{ keyStyle }}">7</button>
+          <button onClick="{{ pinDigit8 }}" style="{{ keyStyle }}">8</button>
+          <button onClick="{{ pinDigit9 }}" style="{{ keyStyle }}">9</button>
+          <button onClick="{{ pinCancel }}" style="{{ keyGhostStyle }}">Cancel</button>
+          <button onClick="{{ pinDigit0 }}" style="{{ keyStyle }}">0</button>
+          <button onClick="{{ pinBackspace }}" style="{{ keyGhostStyle }}">&#9003;</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1180, &quot;height&quot;: 820}}">
+class Component extends DCLogic {
+  CLASSES = ["Transition","Preschool","Year 1","Year 2","Year 3","Year 4","Year 5","Year 6"];
+  DAYS = ["Mon","Tue","Wed","Thu","Fri"];
+
+  state = {
+    appStarted: false,
+    screen: 'mark',
+    students: [],
+    attendance: {},
+    term: 1,
+    week: 1,
+    day: 'Mon',
+    exportTerm: null,
+    reportTerm: null,
+    search: '',
+    pinUnlocked: false,
+    pinModalOpen: false,
+    pinTarget: null,
+    pinDigits: '',
+    pinError: false,
+    clearConfirm: false,
+    addOpen: false, addFirst: '', addLast: '', addClass: 'Transition',
+    bulkOpen: false, bulkText: '', bulkClass: 'Transition',
+    editingId: null, editFirst: '', editLast: '', editClass: '',
+    classFilter: 'All',
+    pinSettingsValue: '',
+    pinSaved: false,
+    customPin: null
+  };
+
+  fileInputRef = React.createRef();
+
+  componentDidMount() {
+    import('./students-data.js').then(m => {
+      const data = (m.default || []).map(s => ({ ...s }));
+      this.setState({ students: data, addClass: data[0] ? data[0].klass : 'Transition', bulkClass: data[0] ? data[0].klass : 'Transition' });
+    });
+  }
+
+  key() { return `${this.state.term}-${this.state.week}-${this.state.day}`; }
+  effectivePin() { return this.state.customPin || this.props.staffPin || '2468'; }
+
+  togglePresent(id) {
+    const k = this.key();
+    const cur = { ...(this.state.attendance[k] || {}) };
+    const c = cur[id] || 0;
+    const next = c >= 3 ? 0 : c + 1;
+    if (next === 0) delete cur[id]; else cur[id] = next;
+    this.setState({ attendance: { ...this.state.attendance, [k]: cur } });
+  }
+
+  markEveryone() {
+    const k = this.key();
+    const cur = { ...(this.state.attendance[k] || {}) };
+    this.state.students.filter(s => s.active).forEach(s => { if (!cur[s.id]) cur[s.id] = 1; });
+    this.setState({ attendance: { ...this.state.attendance, [k]: cur } });
+  }
+
+  clearDay() {
+    if (!this.state.clearConfirm) {
+      this.setState({ clearConfirm: true });
+      setTimeout(() => this.setState({ clearConfirm: false }), 3000);
+      return;
+    }
+    const k = this.key();
+    this.setState({ attendance: { ...this.state.attendance, [k]: {} }, clearConfirm: false });
+  }
+
+  importClick() { if (this.fileInputRef.current) this.fileInputRef.current.click(); }
+
+  onImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const XLSX = window.XLSX;
+      if (!XLSX) { alert('Import library still loading, try again.'); return; }
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }).filter(r => r && r.length && String(r[0]).trim());
+      const { students } = this.state;
+      let maxOrder = students.length ? Math.max(...students.map(s => s.order)) : 0;
+      const defaultClass = this.CLASSES[0];
+      const newOnes = [];
+      rows.forEach((row, i) => {
+        const c0 = String(row[0]).trim();
+        if (/^(name|first ?name|student)$/i.test(c0)) return;
+        let first, last, klass;
+        if (row.length >= 3 && row[1]) {
+          first = c0; last = String(row[1]).trim(); klass = String(row[2] || defaultClass).trim();
+        } else if (row.length === 2) {
+          const parts = c0.split(' '); first = parts[0]; last = parts.slice(1).join(' ');
+          klass = String(row[1] || defaultClass).trim();
+        } else {
+          const parts = c0.split(' '); first = parts[0]; last = parts.slice(1).join(' '); klass = defaultClass;
+        }
+        maxOrder += 1;
+        newOnes.push({ id: Date.now() + Math.random() + i, first, last, klass, active: true, order: maxOrder });
+      });
+      if (newOnes.length) this.setState({ students: [...students, ...newOnes] });
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  }
+
+  handleSearchKeyDown(e) {
+    if (e.key !== 'Enter') return;
+    const k = this.key();
+    const q = this.state.search.trim().toLowerCase();
+    if (!q) return;
+    const present = { ...(this.state.attendance[k] || {}) };
+    const match = this.state.students
+      .filter(s => s.active && !present[s.id] && (s.first + ' ' + s.last).toLowerCase().includes(q))
+      .sort((a, b) => a.first.localeCompare(b.first))[0];
+    if (match) {
+      present[match.id] = 1;
+      this.setState({ attendance: { ...this.state.attendance, [k]: present }, search: '' });
+    }
+  }
+
+  moveUp(id) {
+    this.setState(s => {
+      const list = [...s.students].sort((a, b) => a.order - b.order);
+      const idx = list.findIndex(st => st.id === id);
+      if (idx <= 0) return null;
+      const cur = list[idx], prev = list[idx - 1];
+      const co = cur.order, po = prev.order;
+      return { students: s.students.map(st => st.id === cur.id ? { ...st, order: po } : st.id === prev.id ? { ...st, order: co } : st) };
+    });
+  }
+
+  moveDown(id) {
+    this.setState(s => {
+      const list = [...s.students].sort((a, b) => a.order - b.order);
+      const idx = list.findIndex(st => st.id === id);
+      if (idx < 0 || idx >= list.length - 1) return null;
+      const cur = list[idx], next = list[idx + 1];
+      const co = cur.order, no = next.order;
+      return { students: s.students.map(st => st.id === cur.id ? { ...st, order: no } : st.id === next.id ? { ...st, order: co } : st) };
+    });
+  }
+
+  toggleActive(id) {
+    this.setState(s => ({ students: s.students.map(st => st.id === id ? { ...st, active: !st.active } : st) }));
+  }
+
+  startEdit(id) {
+    const st = this.state.students.find(s => s.id === id);
+    if (!st) return;
+    this.setState({ editingId: id, editFirst: st.first, editLast: st.last, editClass: st.klass });
+  }
+  saveEdit() {
+    const { editingId, editFirst, editLast, editClass } = this.state;
+    this.setState(s => ({
+      students: s.students.map(st => st.id === editingId ? { ...st, first: editFirst.trim() || st.first, last: editLast.trim(), klass: editClass } : st),
+      editingId: null
+    }));
+  }
+  cancelEdit() { this.setState({ editingId: null }); }
+
+  addStudent() {
+    const { addFirst, addLast, addClass, students } = this.state;
+    if (!addFirst.trim()) return;
+    const maxOrder = students.length ? Math.max(...students.map(s => s.order)) : 0;
+    const newSt = { id: Date.now() + Math.random(), first: addFirst.trim(), last: addLast.trim(), klass: addClass || this.CLASSES[0], active: true, order: maxOrder + 1 };
+    this.setState({ students: [...students, newSt], addFirst: '', addLast: '' });
+  }
+
+  addBulk() {
+    const { bulkText, bulkClass, students } = this.state;
+    let maxOrder = students.length ? Math.max(...students.map(s => s.order)) : 0;
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean);
+    const newOnes = lines.map((line, i) => {
+      let name = line, klass = bulkClass || this.CLASSES[0];
+      const parts0 = line.split(/,| - /);
+      if (parts0.length >= 2) { name = parts0[0].trim(); klass = parts0[1].trim(); }
+      const parts = name.split(' ');
+      const first = parts[0] || name;
+      const last = parts.slice(1).join(' ');
+      maxOrder += 1;
+      return { id: Date.now() + Math.random() + i, first, last, klass, active: true, order: maxOrder };
+    });
+    this.setState({ students: [...students, ...newOnes], bulkText: '', bulkOpen: false });
+  }
+
+  openAdmin(target) {
+    if (this.state.pinUnlocked) { this.setState({ screen: target }); }
+    else { this.setState({ pinModalOpen: true, pinTarget: target, pinDigits: '', pinError: false }); }
+  }
+  pinDigit(d) {
+    if (this.state.pinDigits.length >= 4) return;
+    const nd = this.state.pinDigits + d;
+    if (nd.length < 4) { this.setState({ pinDigits: nd, pinError: false }); return; }
+    if (nd === this.effectivePin()) {
+      this.setState({ pinUnlocked: true, pinModalOpen: false, screen: this.state.pinTarget, pinDigits: '' });
+    } else {
+      this.setState({ pinDigits: nd, pinError: true });
+      setTimeout(() => this.setState({ pinDigits: '', pinError: false }), 550);
+    }
+  }
+  pinBackspace() { this.setState(s => ({ pinDigits: s.pinDigits.slice(0, -1) })); }
+  pinCancel() { this.setState({ pinModalOpen: false, pinDigits: '', pinError: false }); }
+  lock() { this.setState({ pinUnlocked: false, screen: 'mark' }); }
+
+  savePinSettings() {
+    const v = (this.state.pinSettingsValue || '').trim();
+    if (v.length !== 4) return;
+    this.setState({ customPin: v, pinSaved: true, pinSettingsValue: '' });
+    setTimeout(() => this.setState({ pinSaved: false }), 2000);
+  }
+
+  exportExcel() {
+    const XLSX = window.XLSX;
+    if (!XLSX) { alert('Export is still loading. Try again in a moment.'); return; }
+    const totalWeeks = this.props.totalWeeks ?? 10;
+    const activeStudents = [...this.state.students].filter(s => s.active).sort((a, b) => a.order - b.order);
+    const wb = XLSX.utils.book_new();
+    const cols = [{ wch: 24 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 6 }];
+    const summaryRows = [['Moil Primary School — Breakfast Club: Term Summary'], [''], ['Term', 'Week', 'Students present', 'Total servings']];
+
+    for (let t = 1; t <= 4; t++) {
+      let termServes = 0, termPresent = 0;
+      for (let w = 1; w <= totalWeeks; w++) {
+        const rows = [
+          ['Moil Primary School — Breakfast Club', '', '', '', '', '', ''],
+          [`Term ${t}  |  Week ${w}`, '', '', '', '', '', ''],
+          ['', '', '', '', '', '', ''],
+          ['Student', 'Class', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+        ];
+        const dayPresent = [0, 0, 0, 0, 0];
+        const dayServes = [0, 0, 0, 0, 0];
+        activeStudents.forEach(st => {
+          const row = [`${st.first} ${st.last}`.trim(), st.klass];
+          this.DAYS.forEach((d, di) => {
+            const c = (this.state.attendance[`${t}-${w}-${d}`] || {})[st.id] || 0;
+            row.push(c > 0 ? c : '');
+            if (c > 0) { dayPresent[di] += 1; dayServes[di] += c; }
+          });
+          rows.push(row);
+        });
+        rows.push(['', '', '', '', '', '', '']);
+        rows.push(['', 'Students present', ...dayPresent]);
+        rows.push(['', 'Total servings', ...dayServes]);
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = cols;
+        ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }];
+        XLSX.utils.book_append_sheet(wb, ws, `T${t} W${w}`);
+        const weekServes = dayServes.reduce((a, b) => a + b, 0);
+        const weekPresent = dayPresent.reduce((a, b) => a + b, 0);
+        termServes += weekServes; termPresent += weekPresent;
+        summaryRows.push([`Term ${t}`, `Week ${w}`, weekPresent, weekServes]);
+      }
+      summaryRows.push([`Term ${t} total`, '', termPresent, termServes]);
+      summaryRows.push(['', '', '', '']);
+    }
+    const summaryWs = XLSX.utils.aoa_to_sheet(summaryRows);
+    summaryWs['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 14 }];
+    summaryWs['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+    wb.SheetNames.unshift(wb.SheetNames.pop());
+    wb.Sheets = wb.Sheets;
+    XLSX.writeFile(wb, 'Moil-Breakfast-Attendance.xlsx');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const showClassOnRows = this.props.showClassOnMarkRows ?? true;
+    const totalWeeks = this.props.totalWeeks ?? 10;
+    const pillBase = { height: '40px', padding: '0 16px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', border: '2px solid #E7DCC8', background: '#FFFFFF', color: '#6B5F4C' };
+    const pillActive = { ...pillBase, background: '#B24A2C', borderColor: '#B24A2C', color: '#FFFFFF' };
+    const navBase = { height: '44px', padding: '0 16px', borderRadius: '10px', border: '2px solid transparent', background: 'transparent', color: '#6B5F4C', fontWeight: '700', fontSize: '15px', cursor: 'pointer' };
+    const navActive = { ...navBase, background: '#F4EEE0', color: '#B24A2C', border: '2px solid #E7DCC8' };
+
+    const navItems = [
+      { key: 'mark', label: 'Mark', onClick: () => this.setState({ screen: 'mark' }), style: s.screen === 'mark' ? navActive : navBase },
+      { key: 'students', label: 'Students', onClick: () => this.openAdmin('students'), style: s.screen === 'students' ? navActive : navBase },
+      { key: 'reports', label: 'Reports', onClick: () => this.openAdmin('reports'), style: s.screen === 'reports' ? navActive : navBase },
+      { key: 'export', label: 'Export', onClick: () => this.openAdmin('export'), style: s.screen === 'export' ? navActive : navBase },
+      { key: 'settings', label: 'Settings', onClick: () => this.openAdmin('settings'), style: s.screen === 'settings' ? navActive : navBase }
+    ];
+
+    const termsList = [1, 2, 3, 4].map(t => ({ n: t, label: 'Term ' + t, onClick: () => this.setState({ term: t }), style: s.term === t ? { ...pillActive, background: '#8A3520', borderColor: '#8A3520' } : pillBase }));
+
+    const weeksList = [];
+    for (let w = 1; w <= totalWeeks; w++) {
+      weeksList.push({ n: w, label: 'W' + w, onClick: () => this.setState({ week: w }), style: s.week === w ? pillActive : pillBase });
+    }
+    const daysList = this.DAYS.map(d => ({ key: d, label: d, onClick: () => this.setState({ day: d }), style: s.day === d ? { ...pillActive, background: '#31665A', borderColor: '#31665A' } : pillBase }));
+
+    const k = `${s.term}-${s.week}-${s.day}`;
+    const dayMap = s.attendance[k] || {};
+    const activeStudents = s.students.filter(st => st.active);
+    const presentCount = activeStudents.filter(st => (dayMap[st.id] || 0) > 0).length;
+    const servesTotal = activeStudents.reduce((sum, st) => sum + (dayMap[st.id] || 0), 0);
+
+    const q = s.search.trim().toLowerCase();
+    const filtered = activeStudents
+      .filter(st => !q || (st.first + ' ' + st.last).toLowerCase().includes(q))
+      .sort((a, b) => a.first.localeCompare(b.first));
+
+    const markStudents = filtered.map(st => {
+      const count = dayMap[st.id] || 0;
+      const present = count > 0;
+      const circleColor = count > 1 ? '#21493F' : '#31665A';
+      return {
+        id: st.id,
+        name: `${st.first} ${st.last}`.trim(),
+        classLabel: st.klass,
+        showClass: showClassOnRows,
+        onClick: () => this.togglePresent(st.id),
+        countLabel: present ? String(count) : '',
+        rowStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', minHeight: '72px', padding: '12px 20px', borderBottom: '1px solid #F0E9DA', cursor: 'pointer', background: present ? '#EAF1EC' : '#FFFFFF', borderLeft: present ? `6px solid ${circleColor}` : '6px solid transparent' },
+        circleStyle: { width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: present ? circleColor : '#FFFFFF', border: present ? `3px solid ${circleColor}` : '3px solid #D8CDB8' },
+        checkStyle: { color: present ? '#FFFFFF' : 'transparent', fontSize: '19px', fontWeight: '700', lineHeight: 1 }
+      };
+    });
+
+    const clearDayStyle = { height: '52px', padding: '0 18px', borderRadius: '12px', border: '2px solid #E7DCC8', background: s.clearConfirm ? '#B24A2C' : '#FFFFFF', color: s.clearConfirm ? '#FFFFFF' : '#6B5F4C', fontWeight: '700', fontSize: '15px', cursor: 'pointer', whiteSpace: 'nowrap' };
+
+    const totalStudents = s.students.length;
+    const totalActive = activeStudents.length;
+    const filteredClass = s.classFilter === 'All' ? s.students : s.students.filter(st => st.klass === s.classFilter);
+    const studentsSorted = [...filteredClass].sort((a, b) => a.order - b.order);
+    const fullSorted = [...s.students].sort((a, b) => a.order - b.order);
+
+    const trackBase = (active) => ({ width: '52px', height: '30px', borderRadius: '15px', background: active ? '#31665A' : '#D8CDB8', position: 'relative', cursor: 'pointer', flexShrink: 0 });
+    const knobBase = (active) => ({ position: 'absolute', top: '3px', left: active ? '25px' : '3px', width: '24px', height: '24px', borderRadius: '50%', background: '#FFFFFF' });
+
+    const studentsView = studentsSorted.map(st => {
+      const idxFull = fullSorted.findIndex(x => x.id === st.id);
+      const isEditing = s.editingId === st.id;
+      return {
+        id: st.id,
+        posLabel: idxFull + 1,
+        upDisabled: idxFull === 0,
+        downDisabled: idxFull === fullSorted.length - 1,
+        upStyle: { width: '32px', height: '26px', border: '2px solid #E7DCC8', borderRadius: '6px', background: '#FFFFFF', cursor: 'pointer', opacity: idxFull === 0 ? 0.35 : 1, fontSize: '11px' },
+        downStyle: { width: '32px', height: '26px', border: '2px solid #E7DCC8', borderRadius: '6px', background: '#FFFFFF', cursor: 'pointer', opacity: idxFull === fullSorted.length - 1 ? 0.35 : 1, fontSize: '11px' },
+        moveUp: () => this.moveUp(st.id),
+        moveDown: () => this.moveDown(st.id),
+        isEditing,
+        isNotEditing: !isEditing,
+        displayName: `${st.first} ${st.last}`.trim(),
+        klass: st.klass,
+        startEdit: () => this.startEdit(st.id),
+        toggleActive: () => this.toggleActive(st.id),
+        trackStyle: trackBase(st.active),
+        knobStyle: knobBase(st.active),
+        activeLabel: st.active ? 'Active' : 'Inactive'
+      };
+    });
+
+    const classFilterChips = ['All', ...this.CLASSES].map(c => ({
+      label: c, onClick: () => this.setState({ classFilter: c }),
+      style: s.classFilter === c ? { ...pillActive, height: '36px', fontSize: '13px', padding: '0 14px' } : { ...pillBase, height: '36px', fontSize: '13px', padding: '0 14px' }
+    }));
+
+    const exportTermSel = s.exportTerm || s.term;
+    const exportTermTabs = [1, 2, 3, 4].map(t => ({
+      label: 'Term ' + t, onClick: () => this.setState({ exportTerm: t }),
+      style: exportTermSel === t ? { ...pillActive, height: '36px', fontSize: '13px', padding: '0 14px', background: '#8A3520', borderColor: '#8A3520' } : { ...pillBase, height: '36px', fontSize: '13px', padding: '0 14px' }
+    }));
+    const exportGridRows = [];
+    for (let w = 1; w <= totalWeeks; w++) {
+      exportGridRows.push({
+        label: 'W' + w,
+        cells: this.DAYS.map(d => {
+          const recorded = Object.keys(s.attendance[`${exportTermSel}-${w}-${d}`] || {}).length > 0;
+          return { style: { height: '26px', borderRadius: '5px', background: recorded ? '#31665A' : '#F4EEE0', border: '1px solid #E7DCC8' } };
+        })
+      });
+    }
+
+    const reportTermSel = s.reportTerm || s.term;
+    const reportTermTabs = [1, 2, 3, 4].map(t => ({
+      label: 'Term ' + t, onClick: () => this.setState({ reportTerm: t }),
+      style: reportTermSel === t ? { ...pillActive, height: '36px', fontSize: '13px', padding: '0 14px', background: '#8A3520', borderColor: '#8A3520' } : { ...pillBase, height: '36px', fontSize: '13px', padding: '0 14px' }
+    }));
+    let reportTermTotal = 0;
+    let reportWeeksWithData = 0;
+    const reportRows = [];
+    for (let w = 1; w <= totalWeeks; w++) {
+      let weekTotal = 0;
+      const cells = this.DAYS.map(d => {
+        const dm = s.attendance[`${reportTermSel}-${w}-${d}`] || {};
+        const total = Object.values(dm).reduce((a, b) => a + b, 0);
+        weekTotal += total;
+        return { value: total || '' };
+      });
+      if (weekTotal > 0) reportWeeksWithData += 1;
+      reportTermTotal += weekTotal;
+      reportRows.push({ label: 'W' + w, cells, total: weekTotal || '' });
+    }
+
+    const pinDots = [0, 1, 2, 3].map(i => ({
+      style: { width: '16px', height: '16px', borderRadius: '50%', background: i < s.pinDigits.length ? (s.pinError ? '#B24A2C' : '#31665A') : '#E7DCC8' }
+    }));
+
+    const keyStyle = { width: '72px', height: '58px', borderRadius: '12px', border: '2px solid #E7DCC8', background: '#FFFFFF', fontSize: '22px', fontWeight: '700', color: '#2B241E', cursor: 'pointer' };
+    const keyGhostStyle = { ...keyStyle, fontSize: '13px', color: '#8A7A63', fontWeight: '700' };
+
+    const targetLabels = { students: 'Students', export: 'Export', settings: 'Settings', reports: 'Reports' };
+
+    return {
+      isSplash: !s.appStarted, isApp: s.appStarted, openApp: () => this.setState({ appStarted: true }),
+      isMark: s.screen === 'mark', isStudents: s.screen === 'students', isExport: s.screen === 'export', isSettings: s.screen === 'settings', isReports: s.screen === 'reports',
+      navItems, lockVisible: s.pinUnlocked, lock: () => this.lock(),
+      termsList, weeksList, daysList,
+      countText: servesTotal > presentCount ? `${presentCount} of ${totalActive} present \u00B7 ${servesTotal} servings` : `${presentCount} of ${totalActive} marked present`,
+      search: s.search, onSearchChange: e => this.setState({ search: e.target.value }), onSearchKeyDown: e => this.handleSearchKeyDown(e),
+      markStudents, markEmpty: markStudents.length === 0, markEmptyText: q ? `No active students match "${s.search}"` : 'No active students on the roster yet.',
+      markEveryone: () => this.markEveryone(), clearDay: () => this.clearDay(), clearDayStyle, clearDayLabel: s.clearConfirm ? 'Tap again to confirm' : 'Clear this day',
+
+      rosterSummary: `${totalStudents} students on the roster \u00B7 ${totalActive} active`,
+      addOpen: s.addOpen, toggleAdd: () => this.setState({ addOpen: !s.addOpen, bulkOpen: false }),
+      addBtnStyle: s.addOpen ? { ...pillActive, height: '44px' } : { ...pillBase, height: '44px' },
+      bulkOpen: s.bulkOpen, toggleBulk: () => this.setState({ bulkOpen: !s.bulkOpen, addOpen: false }),
+      bulkBtnStyle: s.bulkOpen ? { ...pillActive, height: '44px' } : { ...pillBase, height: '44px' },
+      addFirst: s.addFirst, addLast: s.addLast, addClass: s.addClass,
+      onAddFirst: e => this.setState({ addFirst: e.target.value }), onAddLast: e => this.setState({ addLast: e.target.value }), onAddClass: e => this.setState({ addClass: e.target.value }),
+      addStudent: () => this.addStudent(), classOptions: this.CLASSES,
+      importBtnStyle: { ...pillBase, height: '44px' }, fileInputRef: this.fileInputRef,
+      importClick: () => this.importClick(), onImportFile: e => this.onImportFile(e),
+      bulkText: s.bulkText, bulkClass: s.bulkClass, onBulkText: e => this.setState({ bulkText: e.target.value }), onBulkClass: e => this.setState({ bulkClass: e.target.value }),
+      addBulk: () => this.addBulk(), bulkPreviewCount: s.bulkText.split('\n').map(l => l.trim()).filter(Boolean).length,
+      classFilterChips, studentsView,
+      editFirst: s.editFirst, editLast: s.editLast, editClass: s.editClass,
+      onEditFirst: e => this.setState({ editFirst: e.target.value }), onEditLast: e => this.setState({ editLast: e.target.value }), onEditClass: e => this.setState({ editClass: e.target.value }),
+      saveEdit: () => this.saveEdit(), cancelEdit: () => this.cancelEdit(),
+
+      totalWeeksLabel: 'Week ' + totalWeeks, exportExcel: () => this.exportExcel(), exportGridRows, exportTermTabs,
+      reportTermTabs, reportRows, reportTermTotal,
+      reportSummaryLine: `Across ${reportWeeksWithData} of ${totalWeeks} weeks recorded this term.`,
+
+      pinSettingsValue: s.pinSettingsValue, onPinSettings: e => this.setState({ pinSettingsValue: e.target.value.replace(/\D/g, '').slice(0, 4) }), savePinSettings: () => this.savePinSettings(), pinSaved: s.pinSaved,
+
+      pinModalOpen: s.pinModalOpen, pinTargetLabel: targetLabels[s.pinTarget] || '',
+      pinCardStyle: { background: '#FFFFFF', borderRadius: '20px', padding: '30px 34px', width: '340px', animation: s.pinError ? 'pinShake 0.4s ease' : 'none', boxShadow: '0 20px 60px rgba(43,36,32,0.3)' },
+      pinDots, keyStyle, keyGhostStyle,
+      pinDigit1: () => this.pinDigit('1'), pinDigit2: () => this.pinDigit('2'), pinDigit3: () => this.pinDigit('3'),
+      pinDigit4: () => this.pinDigit('4'), pinDigit5: () => this.pinDigit('5'), pinDigit6: () => this.pinDigit('6'),
+      pinDigit7: () => this.pinDigit('7'), pinDigit8: () => this.pinDigit('8'), pinDigit9: () => this.pinDigit('9'), pinDigit0: () => this.pinDigit('0'),
+      pinBackspace: () => this.pinBackspace(), pinCancel: () => this.pinCancel()
+    };
+  }
+}
+
+</script>
+</body>
+</html>

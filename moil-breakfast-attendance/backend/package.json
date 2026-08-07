@@ -1,0 +1,21 @@
+{
+  "name": "moil-breakfast-attendance-backend",
+  "version": "1.0.0",
+  "description": "Backend API for the Moil Primary School Breakfast Club attendance app",
+  "private": true,
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
