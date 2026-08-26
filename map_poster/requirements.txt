@@ -1,0 +1,5 @@
+osmnx>=2.1
+matplotlib>=3.11
+shapely>=2.1
+geopandas>=1.1
+Pillow>=12.0
