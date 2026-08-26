@@ -1,0 +1,30 @@
+name: Generate map poster
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ghostscript
+
+      - name: Install Python dependencies
+        run: pip install -r map_poster/requirements.txt
+
+      - name: Generate poster
+        run: python3 map_poster.py
+        working-directory: map_poster
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: map-poster-output
+          path: map_poster/output/
+          if-no-files-found: error
